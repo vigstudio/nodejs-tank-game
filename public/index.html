@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tank Đại Chiến</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f5f5f5;
+            overflow: hidden;
+        }
+
+        /* Màn hình bắt đầu */
+        #startScreen {
+            position: fixed;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background-color: rgba(0, 0, 0, 0.8);
+            z-index: 1000;
+        }
+
+        h1 {
+            color: white;
+            font-size: 3em;
+            text-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+            margin-bottom: 20px;
+        }
+
+        #startButton {
+            font-size: 1.5em;
+            padding: 15px 40px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        #startButton:hover {
+            transform: scale(1.05);
+            background-color: #45a049;
+        }
+
+        #gameContainer {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: white;
+            touch-action: none;
+            cursor: crosshair;
+        }
+
+        #gameArea {
+            width: 8000px;
+            height: 6000px;
+            position: absolute;
+            background-color: white;
+            background-image:
+                linear-gradient(#ccc 1px, transparent 1px),
+                linear-gradient(90deg, #ccc 1px, transparent 1px);
+            background-size: 200px 200px;
+            will-change: transform;
+            transform: translate(0, 0);
+        }
+
+        /* Giao diện hiển thị chồng lên game */
+        #gameOverlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 100;
+        }
+
+        #playerStats {
+            position: fixed;
+            top: 10px;
+            left: 10px;
+            display: flex;
+            gap: 15px;
+            z-index: 200;
+        }
+
+        .stat-box {
+            background-color: rgba(0, 0, 0, 0.5);
+            color: white;
+            padding: 5px 10px;
+            border-radius: 5px;
+            pointer-events: none;
+        }
+
+        .player {
+            width: 50px;
+            height: 50px;
+            position: absolute;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);
+            transition: opacity 0.3s;
+            will-change: transform;
+            transform: translate(0, 0);
+            border: 2px solid rgba(255, 255, 255, 0.8);
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+            overflow: visible !important;
+        }
+
+        .health-bar {
+            position: absolute;
+            bottom: -15px;
+            left: 5px;
+            width: 40px;
+            height: 4px;
+            background-color: #ddd;
+        }
+
+        .health-fill {
+            height: 100%;
+            background-color: #0c0;
+            width: 100%;
+        }
+
+        .bullet {
+            position: absolute;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background-color: red;
+            box-shadow: 0 0 10px rgba(255, 0, 0, 0.8);
+            z-index: 6;
+            will-change: transform;
+            transform: translate(0, 0);
+        }
+
+        .dead {
+            opacity: 0.5;
+        }
+
+        .respawn-timer {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: red;
+            font-size: 20px;
+            font-weight: bold;
+            display: none;
+            z-index: 100;
+        }
+
+        .aim-line {
+            position: absolute;
+            height: 2px;
+            background-color: rgba(255, 0, 0, 0.8);
+            transform-origin: left center;
+            pointer-events: none;
+            z-index: 100;
+        }
+
+        #minimap {
+            position: fixed;
+            bottom: 10px;
+            right: 10px;
+            width: 200px;
+            height: 150px;
+            background-color: rgba(0, 0, 0, 0.5);
+            border: 1px solid white;
+            z-index: 10;
+        }
+
+        .minimap-player {
+            position: absolute;
+            width: 4px;
+            height: 4px;
+            border-radius: 50%;
+            will-change: transform;
+            transform: translate(0, 0);
+        }
+
+        .minimap-me {
+            border: 1px solid white;
+            width: 6px;
+            height: 6px;
+        }
+
+        .coordinates {
+            position: fixed;
+            bottom: 10px;
+            left: 10px;
+            background-color: rgba(0, 0, 0, 0.5);
+            color: white;
+            padding: 5px;
+            border-radius: 3px;
+            font-size: 12px;
+            z-index: 10;
+        }
+
+        #fpsCounter {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            background-color: rgba(0, 0, 0, 0.5);
+            color: white;
+            padding: 5px 10px;
+            border-radius: 5px;
+            font-size: 12px;
+            z-index: 10;
+        }
+
+        #gameControls {
+            position: fixed;
+            bottom: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: rgba(0, 0, 0, 0.5);
+            color: white;
+            padding: 5px 10px;
+            border-radius: 5px;
+            font-size: 12px;
+            z-index: 10;
+        }
+
+        .muzzle-flash {
+            position: absolute;
+            width: 20px;
+            height: 8px;
+            background-color: yellow;
+            box-shadow: 0 0 10px rgba(255, 255, 0, 0.8);
+            transform-origin: left center;
+            z-index: 7;
+            border-radius: 0 4px 4px 0;
+        }
+
+        .obstacle {
+            position: absolute;
+            background-color: #555;
+            border: 2px solid #333;
+            z-index: 5;
+        }
+
+        .bomb {
+            position: absolute;
+            width: 40px;
+            height: 40px;
+            background-color: black;
+            border-radius: 50%;
+            border: 2px solid red;
+            z-index: 6;
+            animation: bomb-pulse 1s infinite;
+            box-shadow: 0 0 15px rgba(255, 0, 0, 0.8);
+        }
+
+        @keyframes bomb-pulse {
+            0% {
+                transform: scale(1);
+                box-shadow: 0 0 15px rgba(255, 0, 0, 0.8);
+            }
+
+            100% {
+                transform: scale(1.2);
+                box-shadow: 0 0 30px rgba(255, 0, 0, 1);
+            }
+        }
+
+        .explosion {
+            position: absolute;
+            width: 400px;
+            height: 400px;
+            background: radial-gradient(circle, rgba(255, 150, 0, 0.8) 0%, rgba(255, 0, 0, 0.6) 50%, rgba(255, 0, 0, 0) 100%);
+            border-radius: 50%;
+            z-index: 7;
+            animation: explosion 1s ease-out forwards;
+        }
+
+        @keyframes explosion {
+            0% {
+                transform: scale(0.1);
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.8;
+            }
+
+            100% {
+                transform: scale(1);
+                opacity: 0;
+            }
+        }
+
+        @keyframes pulsate {
+            0% {
+                transform: scale(1);
+                opacity: 1;
+            }
+
+            100% {
+                transform: scale(1.1);
+                opacity: 0.7;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Màn hình bắt đầu -->
+    <div id="startScreen">
+        <h1>Tank Đại Chiến</h1>
+        <button id="startButton">Bắt Đầu Chơi</button>
+    </div>
+
+    <!-- Game container -->
+    <div id="gameContainer">
+        <div id="gameArea"></div>
+    </div>
+
+    <!-- Giao diện hiển thị chồng lên game -->
+    <div id="gameOverlay">
+        <div id="playerStats">
+            <div class="stat-box">Máu: <span id="playerHealth">100</span>/100</div>
+            <div class="stat-box">Điểm số: <span id="playerScore">0</span></div>
+            <div class="stat-box">Người chơi: <span id="playerCount">0</span></div>
+        </div>
+        <div id="minimap"></div>
+        <div class="coordinates">X: <span id="coordX">0</span> | Y: <span id="coordY">0</span></div>
+        <div id="respawnTimer" class="respawn-timer">Hồi sinh sau: 4</div>
+        <div id="fpsCounter">FPS: 0</div>
+        <div id="gameControls">Di chuyển: W/A/S/D hoặc Mũi tên | Ngắm và bắn: Chuột</div>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="game.js"></script>
+</body>
+
+</html>
